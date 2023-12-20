@@ -35,6 +35,15 @@
     font-size: 1.2em;
 }
 
+.jfe-verse-modal-body{
+    display: flex;
+    flex-direction: column;
+}
+
+.jfe-verse-modal-content{
+    padding: 15px;
+}
+
 .jfe-verse-modal-footer{
     min-height: 3.5em;
     border-radius: 0px 0px 5px 5px;

@@ -2,7 +2,8 @@
 
 document.addEventListener("DOMContentLoaded", function(event) { 
     document.getElementById("button-test").addEventListener("click", function(e){
-        let modal = new VerseModal("test-modal", modalColorModes.primary);
+        //let modal = new VerseModal("test-modal", modalColorModes.primary);
+        let modal = new SimpleConfirmModal("test-modal");
         modal.show();
     })
 });

@@ -288,13 +288,29 @@ class VerseModal extends Modal{
     getTitle(){
         let h4 = new HtmlElem().create("h4");
         h4.addClasses(this.colorMode.titleClasses);
-        return h4;
+        return h4; 
+    }
+
+    getContent(){
+        
     }
 
     getFooterButtons(){
         return [
 
         ];
+    }
+
+    getBody(){
+        let body = new HtmlElem(this.id + "-body").create("div");
+        body.addClasses(this.colorMode.bodyClasses);
+
+        let content = this.getContent();
+        if(content){
+            body.append(content);
+        }
+
+        return body;
     }
 
     getCloseHeadButton(){
@@ -325,6 +341,11 @@ class VerseModal extends Modal{
         let footer = new HtmlElem(this.id + "-footer").create("div");
         footer.addClasses(this.colorMode.footerClasses);
 
+        let buttons = this.getFooterButtons();
+        for(let button of buttons){
+            footer.append(button);
+        }
+
         return footer;
     }
 
@@ -342,7 +363,7 @@ class VerseModal extends Modal{
 
 class SimpleConfirmModal extends VerseModal{
     constructor(someId){
-        super("simple-confirm-modal", modalColorModes.danger);
+        super("simple-confirm-modal", modalColorModes.primary);
         this.someId = someId;
 
         this.someObject = null;
@@ -354,8 +375,18 @@ class SimpleConfirmModal extends VerseModal{
         h4.getElement().textContent = "Удаление чего-то там"
         return h4;
     }
-    // Вы точно уверены что хотите удалить что-то там?
+    // 
+    getContent(){
+        let container = new HtmlElem(this.id + "-content").create("div");
+        container.addClass("jfe-verse-modal-content");
+        let textNode = new HtmlElem().create("p");
+        textNode.getElement().textContent = "Вы точно уверены что хотите удалить что-то там?";
+        container.append(textNode);
 
+        return container;
+    }
     
+    simulateHttpRequest(){
 
+    }
 }
