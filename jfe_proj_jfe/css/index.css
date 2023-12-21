@@ -1,3 +1,17 @@
+#jfe-modals{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+#jfe-modals-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #222;
+}
+
 .jfe-verse-modal{
     display: flex;
     flex-direction: column;
@@ -48,6 +62,12 @@
     min-height: 3.5em;
     border-radius: 0px 0px 5px 5px;
     border-top: 1px solid #e5e5e5;
+    padding: 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 5px;
 }
 
 .jfe-verse-modal-header-close{
@@ -76,3 +96,136 @@
     font-weight:300;
     /*line-height: 1.42857143;*/
 }
+
+/* == Это можно не вводить в КИС == */
+.jfe-verse-btn{
+    outline: none !important;
+    -webkit-border-radius: 5px !important;
+    -moz-border-radius: 5px !important;
+    border-radius: 5px !important;
+    padding: 5px 10px;
+}
+
+.jfe-verse-btn-success{
+    color: #ffffff;
+    background-color: #5cb85c;
+    border-color: #55b555;
+}
+
+.jfe-verse-btn-success:hover,
+.jfe-verse-btn-success:active,
+.jfe-verse-btn-success.active,
+.jfe-verse-btn-success.disabled,
+.jfe-verse-btn-success[disabled] {
+  color: #ffffff;
+  background-color: #51a351;
+  /**background-color: #499249;*/
+}
+
+.jfe-verse-btn-danger {
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    background-color: #da4f49;
+    background-repeat: repeat-x;
+    background-image: linear-gradient(to bottom, #ee5f5b, #bd362f);
+    border-left-color: #bd362f;
+    border-right-color: #bd362f;
+    border-top-color: #bd362f;
+    border-bottom-color: #802420;
+}
+
+.jfe-verse-btn-danger:hover,
+.jfe-verse-btn-danger:active,
+.jfe-verse-btn-danger.active,
+.jfe-verse-btn-danger.disabled,
+.jfe-verse-btn-danger[disabled] {
+  color: #ffffff;
+  background-color: #bd362f;
+}
+
+.jfe-verse-btn-default {
+    color: #444;
+    background-color: #efefef;
+    border-color: #e5e5e5;
+}
+
+/* ================================ */
+
+.spinner-container{
+    display: flex;   
+}
+
+.spinner-container-small{
+    font-size: 18px;
+}
+
+.spinner-container-medium{
+    font-size: 32px;
+}
+
+.spinner-container-large{
+    font-size: 72px;
+}
+
+.spinner{
+    border-radius: 100%;
+    width: 0.2em;
+    height: 0.2em;
+    animation: spinner 1500ms infinite linear;
+    /*background-color: rgb(0, 75, 119);*/
+    box-shadow:
+    rgb(0, 75, 119) 0.5em 0 0 0, 
+    rgb(0, 75, 119) 0.354em 0.354em 0 0, 
+    rgb(0, 75, 119) 0 0.5em 0 0, 
+    rgb(0, 75, 119) -0.354em 0.354em 0 0, 
+    rgb(0, 75, 119) -0.5em 0 0 0, 
+    rgb(0, 75, 119) -0.354em -0.354em 0 0, 
+    rgb(0, 75, 119) 0 -0.5em 0 0, 
+    rgb(0, 75, 119) 0.354em -0.354em 0 0;
+}
+
+@keyframes spinner {
+    0% {
+        -webkit-transform: rotate(0deg);
+        -moz-transform: rotate(0deg);
+        -ms-transform: rotate(0deg);
+        -o-transform: rotate(0deg);
+        transform: rotate(0deg);
+        box-shadow:
+        rgb(0, 75, 119) 0.5em 0 0 0, 
+        rgb(0, 75, 119) 0.354em 0.354em 0 0, 
+        rgb(0, 75, 119) 0 0.5em 0 0, 
+        rgb(0, 75, 119) -0.354em 0.354em 0 0, 
+        rgb(0, 75, 119) -0.5em 0 0 0, 
+        rgb(0, 75, 119) -0.354em -0.354em 0 0, 
+        rgb(0, 75, 119) 0 -0.5em 0 0, 
+        rgb(0, 75, 119) 0.354em -0.354em 0 0;
+    }
+    50%{
+        -webkit-transform: rotate(180deg);
+        -moz-transform: rotate(180deg);
+        -ms-transform: rotate(180deg);
+        -o-transform: rotate(180deg);
+        transform: rotate(180deg);
+        box-shadow:
+        rgb(0, 75, 119) 0.5em 0em 0 0, rgb(0, 75, 119) 0.3909157412340149em 0.31174490092936674em 0 0, rgb(0, 75, 119) 0.11126046697815722em 0.4874639560909118em 0 0, rgb(0, 75, 119) -0.21694186955877903em 0.4504844339512096em 0 0, rgb(0, 75, 119) -0.4504844339512095em 0.21694186955877912em 0 0, rgb(0, 75, 119) -0.4874639560909118em -0.11126046697815714em 0 0, rgb(0, 75, 119) -0.31174490092936685em -0.39091574123401485em 0 0, rgb(0, 75, 119) -9.184850993605148e-17em -0.5em 0 0;
+    }
+
+
+    100% {
+        -webkit-transform: rotate(360deg);
+        -moz-transform: rotate(360deg);
+        -ms-transform: rotate(360deg);
+        -o-transform: rotate(360deg);
+        transform: rotate(360deg);
+        box-shadow:
+        rgb(0, 75, 119) 0.5em 0 0 0, 
+        rgb(0, 75, 119) 0.354em 0.354em 0 0, 
+        rgb(0, 75, 119) 0 0.5em 0 0, 
+        rgb(0, 75, 119) -0.354em 0.354em 0 0, 
+        rgb(0, 75, 119) -0.5em 0 0 0, 
+        rgb(0, 75, 119) -0.354em -0.354em 0 0, 
+        rgb(0, 75, 119) 0 -0.5em 0 0, 
+        rgb(0, 75, 119) 0.354em -0.354em 0 0;
+    }
+  }

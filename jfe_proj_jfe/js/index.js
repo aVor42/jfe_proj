@@ -146,7 +146,7 @@ class HtmlElem{
     }
 }
 
-class Spinner{
+class Spinner2{
     constructor(spinnerId, circleCount){
         this.spinnerId = spinnerId;
         this.defaultCirclesCount = 5;
@@ -190,6 +190,45 @@ class Spinner{
     }
 }
 
+class Spinner{
+    constructor(id, spinnerSizeClass){
+        this.id = id;
+        this.spinnerSizeClass = spinnerSizeClass;
+    }
+
+    getElement(){
+        let container = new HtmlElem(this.id).create("div");
+        container.addClass("spinner-container");
+        if (this.spinnerSizeClass){
+            container.addClass(this.spinnerSizeClass);
+        }
+
+        let testDiv = new HtmlElem().create("div");
+        testDiv.addClass("spinner");
+        container.append(testDiv);
+
+        return container.getElement();
+    }
+}
+
+class SpinnerSmall extends Spinner{
+    constructor(id){
+        super(id, "spinner-container-small")
+    }
+}
+
+class SpinnerMedium extends Spinner{
+    constructor(id){
+        super(id, "spinner-container-medium")
+    }
+}
+
+class SpinnerLarge extends Spinner{
+    constructor(id){
+        super(id, "spinner-container-large")
+    }
+}
+
 class Modal{
     constructor(id){  
         this.id = id;
@@ -215,14 +254,26 @@ class Modal{
     show(){
         let body = document.getElementsByTagName("body")[0];
 
+        let modalsBody = new HtmlElem("jfe-modals");
+        if(!modalsBody.isExistsOnDocumnent()){
+            modalsBody.create("div");
+            body.append(modalsBody.getElement());
+        }        
+
+        let modalsContainer = new HtmlElem("jfe-modals-container");
+        if(!modalsContainer.isExistsOnDocumnent()){
+            modalsContainer.create("div");
+            modalsBody.append(modalsContainer.getElement());
+        }
+
         let overlay = this.getOverlay();
         if(!overlay.isExistsOnDocumnent()){
-            body.append(overlay.getElement());
+            modalsContainer.append(overlay.getElement())
         }
 
         let modalElement = this.getModal();
         if(!modalElement.isExistsOnDocumnent()){
-            body.append(modalElement.getElement());
+            modalsContainer.append(modalElement.getElement())
         }
         
         if(modalElement.isExistsOnDocumnent()){
@@ -262,20 +313,23 @@ const modalColorModes = {
     info: {
         headerClasses: ["jfe-verse-modal-header", "jfe-verse-default"], 
         bodyClasses: ["jfe-verse-modal-body"],
-        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default"],
-        titleClasses: ["jfe-verse-modal-title"]
+        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default", "pull-right"],
+        titleClasses: ["jfe-verse-modal-title"],
+        primaryBtnClasses: ["jfe-verse-btn", "jfe-verse-btn-success"]
     },
     danger: {
         headerClasses: ["jfe-verse-modal-header", "jfe-verse-danger"], 
         bodyClasses: ["jfe-verse-modal-body"],
-        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default"],
-        titleClasses: ["jfe-verse-modal-title"]
+        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default", "pull-right"],
+        titleClasses: ["jfe-verse-modal-title"],
+        primaryBtnClasses: ["jfe-verse-btn", "jfe-verse-btn-danger"]
     },
     primary: {
         headerClasses: ["jfe-verse-modal-header", "jfe-verse-primary"], 
         bodyClasses: ["jfe-verse-modal-body"],
-        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default"],
-        titleClasses: ["jfe-verse-modal-title"]
+        footerClasses: ["jfe-verse-modal-footer", "jfe-verse-default", "pull-right"],
+        titleClasses: ["jfe-verse-modal-title"],
+        primaryBtnClasses: ["jfe-verse-btn", "jfe-verse-btn-success"]
     }
 }
 
@@ -361,32 +415,55 @@ class VerseModal extends Modal{
     }
 }
 
-class SimpleConfirmModal extends VerseModal{
-    constructor(someId){
-        super("simple-confirm-modal", modalColorModes.primary);
-        this.someId = someId;
-
-        this.someObject = null;
+class SimpleVerseConfirmModal extends VerseModal{
+    constructor(id, title, text, confirmBtnText, colorMode){
+        super(id, colorMode);
+        this.title = title? title: "Подтвердите действие";
+        this.text = text? text: "Вы уверены?";
+        this.confirmBtnText = confirmBtnText? confirmBtnText: "Ок";
+        this.colorMode = colorMode? colorMode: modalColorModes.info;
     }
 
     getTitle(){
         let h4 = new HtmlElem().create("h4");
         h4.addClasses(this.colorMode.titleClasses);
-        h4.getElement().textContent = "Удаление чего-то там"
+        h4.getElement().textContent = this.title
         return h4;
     }
-    // 
+
     getContent(){
         let container = new HtmlElem(this.id + "-content").create("div");
         container.addClass("jfe-verse-modal-content");
         let textNode = new HtmlElem().create("p");
-        textNode.getElement().textContent = "Вы точно уверены что хотите удалить что-то там?";
+        textNode.getElement().textContent = this.text;
         container.append(textNode);
 
         return container;
     }
-    
-    simulateHttpRequest(){
 
+    getFooterButtons(){
+        let modal = this;
+
+        let confirmBtn = new HtmlElem(this.id + "-confirm-btn").create("button");
+        confirmBtn.addClasses(this.colorMode.primaryBtnClasses);
+        confirmBtn.getElement().textContent = this.confirmBtnText;
+        confirmBtn.getElement().addEventListener("click", (e) => {
+            modal.onConfirm();
+        })
+
+        let closeBtn = new HtmlElem(this.id + "-close-btn").create("button");
+        closeBtn.addClasses(["jfe-verse-btn", "jfe-verse-btn-default"]);
+        closeBtn.getElement().textContent = "Закрыть";
+        closeBtn.getElement().addEventListener("click", (e) => { 
+            modal.clear(); 
+            modal.hide();
+        })
+
+        return [closeBtn, confirmBtn];
+    }
+
+    onConfirm(){
+        
     }
 }
+
