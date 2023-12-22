@@ -1,5 +1,4 @@
 #jfe-modals{
-    position: absolute;
     height: 100%;
     width: 100%;
 }
@@ -151,8 +150,68 @@
 
 /* ================================ */
 
+.spinner-container-small{
+    height: 1em;
+    width: 1em;
+}
+
+.spinner-container-medium{
+    height: 10em;
+    width: 10em;
+}
+
+.spinner-container-large{
+    height: 20em;
+    width: 20em;
+}
+
 .spinner-container{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+
+
+.spinner-container{
+    top:0;
+    bottom:0;
+    left: 0;
+    right: 0;
+    position:absolute;
     display: flex;   
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: #444
+}
+
+.spinner-container-stretch-w{
+    --w: 100%;
+    width: calc(var(--w))
+}
+
+.spinner-container-ratio-w{
+    /*--h: 100%;
+    height: var(--h);*/
+    padding-top: 100%;
+    /*aspect-ratio: 1 / 1;*/
+    background-color: #00856f;
+    position: relative;
+}
+
+.spinner-circle{
+    position: absolute;
+    background-color: #51a351;
+    border: 1px solid white;
+    width: 20%;
+    height: 20%;
+    top: 0;
+    left: 0;
 }
 
 .spinner-container-small{

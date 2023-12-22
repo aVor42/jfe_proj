@@ -213,21 +213,75 @@ class Spinner{
 
 class SpinnerSmall extends Spinner{
     constructor(id){
-        super(id, "spinner-container-small")
+        super(id, "spinner-container-small");
     }
 }
 
 class SpinnerMedium extends Spinner{
     constructor(id){
-        super(id, "spinner-container-medium")
+        super(id, "spinner-container-medium");
     }
 }
 
 class SpinnerLarge extends Spinner{
     constructor(id){
-        super(id, "spinner-container-large")
+        super(id, "spinner-container-large");
     }
 }
+
+
+class Spinner3{
+    constructor(id, circlesCount){
+        this.id = id;
+        this.circlesCount = circlesCount;
+    }
+
+    getElement(){
+        let container = new HtmlElem(this.id).create("div");
+        container.addClass("spinner-container");
+
+        let spinnerW = new HtmlElem().create("div");
+        spinnerW.addClass("spinner-container-stretch-w");
+        container.append(spinnerW);
+
+        let spinnerRatioW = new HtmlElem().create("div");
+        spinnerRatioW.addClass("spinner-container-ratio-w");
+        spinnerW.append(spinnerRatioW);
+
+        /*
+spinner-container-stretch-w{
+    --w: 100%;
+    width: calc(var(--w))
+}
+
+.spinner-container-ratio-w{
+    padding-top: 100%;
+    background-color: #00856f;
+    position: relative;
+}
+
+.spinner-container-stretch-h{
+    --h: 100%;
+    height: calc(var(--h))
+}
+
+.spinner-container-ratio-w
+        */
+
+        for(let i = 0; i < this.circlesCount; i++){
+            let circle = new HtmlElem().create("div");
+            circle.addClass("spinner-circle");
+            spinnerRatioW.append(circle);
+        }
+
+
+        return container.getElement();
+    }
+}
+
+
+
+
 
 class Modal{
     constructor(id){  
