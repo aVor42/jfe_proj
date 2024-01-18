@@ -211,23 +211,7 @@ class Spinner{
     }
 }
 
-class SpinnerSmall extends Spinner{
-    constructor(id){
-        super(id, "spinner-container-small");
-    }
-}
 
-class SpinnerMedium extends Spinner{
-    constructor(id){
-        super(id, "spinner-container-medium");
-    }
-}
-
-class SpinnerLarge extends Spinner{
-    constructor(id){
-        super(id, "spinner-container-large");
-    }
-}
 
 
 class Spinner3{
@@ -247,30 +231,50 @@ class Spinner3{
         let spinnerRatioW = new HtmlElem().create("div");
         spinnerRatioW.addClass("spinner-container-ratio-w");
         spinnerW.append(spinnerRatioW);
+        
+        let radius = 10;
+        let animateTimeMs = 3500;
 
-        /*
-spinner-container-stretch-w{
-    --w: 100%;
-    width: calc(var(--w))
-}
+        
+        let getTranslateByXY = (x, y) => {
+            return `translate(${getTransformPercent(x)}%, ${getTransformPercent(-y)}%)`
+        }
 
-.spinner-container-ratio-w{
-    padding-top: 100%;
-    background-color: #00856f;
-    position: relative;
-}
+        let getTransformPercent = (position) => {
+            let centerSideProcent = 0;
+            let endSideProcent = 50 - radius;
+            let lengthProcent = endSideProcent - centerSideProcent;
+            let procentByDiameter = lengthProcent * 100 / (radius * 2);
+            return (procentByDiameter * position).toFixed(2);
 
-.spinner-container-stretch-h{
-    --h: 100%;
-    height: calc(var(--h))
-}
+        }
 
-.spinner-container-ratio-w
-        */
+        let genAngle = 2 * Math.PI;
+        let dAngle = genAngle / this.circlesCount;
+        let length = 1;
+
+        let dTime = animateTimeMs / this.circlesCount / 2;
 
         for(let i = 0; i < this.circlesCount; i++){
             let circle = new HtmlElem().create("div");
             circle.addClass("spinner-circle");
+            let circElement = circle.getElement();
+            let getBeginCeneter = () =>{
+                let centerPerscent = 50;
+                return (centerPerscent - radius) + "%";
+            }
+            circElement.style.height = radius * 2 + "%";
+            circElement.style.width = radius * 2 + "%";
+            circElement.style.top = getBeginCeneter();
+            circElement.style.left = getBeginCeneter();
+
+            let angle = dAngle  * i;
+            let startAnimateTime = dTime * i;
+            /* animation: 1s linear -0.153846s infinite normal none running spinner-line-fade-quick; */
+            let x = Math.cos(angle) * length;
+            let y = Math.sin(angle) * length
+            circElement.style.transform = getTranslateByXY(1, 0);
+            circElement.style.animation = `${animateTimeMs}ms linear ${-startAnimateTime}ms infinite normal none running spinner-circle`;
             spinnerRatioW.append(circle);
         }
 
@@ -279,9 +283,41 @@ spinner-container-stretch-w{
     }
 }
 
+class SpinnerSize extends Spinner3{
+    constructor(id, circlesCount, sizeClass){
+        super(id, circlesCount);
+        this.sizeClass = sizeClass;
+    }
 
+    getElement(){
+        let sizeContainer = new HtmlElem(this.id + "-size-container").create("div");
+        sizeContainer.addClass("spinner-size-container");
+        let spinnerSize = new HtmlElem(this.id + "-size").create("div");
+        spinnerSize.addClass(this.sizeClass);
+        spinnerSize.append(super.getElement());
+        sizeContainer.append(spinnerSize);
 
+        return sizeContainer.getElement();
+    }
+}
 
+class SpinnerSmall extends SpinnerSize{
+    constructor(id, circlesCount){
+        super(id, circlesCount, "spinner-container-small");
+    }
+}
+
+class SpinnerMedium extends SpinnerSize{
+    constructor(id, circlesCount){
+        super(id, circlesCount, "spinner-container-medium");
+    }
+}
+
+class SpinnerLarge extends SpinnerSize{
+    constructor(id, circlesCount){
+        super(id, circlesCount, "spinner-container-large");
+    }
+}
 
 class Modal{
     constructor(id){  
@@ -345,6 +381,7 @@ class Modal{
         let modalElement = this.getModal();
 
         overlay.addClass("jfe-hidden");
+        modalElement.removeClass("jfe-verse-modal");
         modalElement.addClass("jfe-hidden");
     }
 
@@ -521,3 +558,353 @@ class SimpleVerseConfirmModal extends VerseModal{
     }
 }
 
+class FieldDependEngine{
+    constructor(dependent, dependencies){
+        // зависимый
+        this.dependent = dependent;
+        // зависимости от
+        this.dependencies = dependencies;
+        for(let dependence of this.dependencies){
+            dependence.addOnchange(() => {
+                dependent.initialize();
+            });
+        }
+    }
+}
+
+class FormField {
+    constructor(name, formId, depends, required, enable){
+        this.name = name;
+        this.id = formId + "-" + name;
+        this.dependEnginge = new FieldDependEngine(this, depends);
+        this.required = required;
+        this.enable = enable;
+
+        this.onChangeList = [];
+    }
+
+    getElement(){
+
+    }
+
+    getValue(){
+
+    }
+
+    setValue(){
+
+    }
+
+    initialize(value){
+
+    }
+
+    addOnchange(action){
+        this.onChangeList.push(action);
+    }
+
+    setInititialize(getData){
+        this.getData = getData;
+    }
+}
+
+class StaticNonRenderFormField extends FormField{
+    constructor(name, formId){
+        super(name, formId, [], true, false);
+    }
+
+    getValue(){
+        return this.value;
+    }
+
+    initialize(value){
+        this.value = value;
+    }
+}
+
+class FormFieldInput extends FormField{
+    constructor(id, defaultValue){
+        super(id, defaultValue);
+    }
+
+    getElement(){
+        let input = new HtmlElem(this.id).create("input");
+        input.getElement().value = this.defaultValue;
+
+        input.addClasses([]);
+        return input;
+    }
+
+    addOnchange(action){
+        new HtmlElem(this.id).getElement().addEventListener("input", e => {
+            action(e);
+        })
+    }
+
+    getValue(){
+
+    }
+}
+
+class FormFieldSelect extends FormField{
+    constructor(name, formId, depends, required, enable){
+        super(name, formId, depends, required, enable);
+        
+    }
+
+    initialize(value){
+        if(value){
+            this.value = value;
+        }
+        
+        return this.getData().then(data => {
+            let select = new HtmlElem(this.id);
+            if(!select.isExistsOnDocumnent()){
+                return;
+            }
+
+            for(let dataEntry of data){
+                let option = new HtmlElem().create("option");
+                option.getElement().value = dataEntry.value;
+                option.getElement().textContent = dataEntry.text;
+                select.append(option);
+            }
+            select.getElement().value = this.value;
+
+            return Promise.resolve();
+        });
+    }
+
+    getElement(){
+        let select = new HtmlElem(this.id).create("select");
+        return select;
+    }
+}
+
+class FormFieldSelect2{
+
+}
+
+class FormFieldCheckbox{
+
+}
+
+
+
+
+
+
+
+class Form{
+    constructor(fields){
+        this.fields = fields;
+    }
+
+    getElement(){
+        let formContainer = new HtmlElem(this.id).create("div");
+        for(let field of this.fields){
+            formContainer.append(field.getElement());
+        }
+        return formContainer;
+    }
+
+    getFormData(){
+        let formData = new FormData();
+        return formData;
+    }
+}
+
+// extends VerseModal
+class FormModal extends VerseModal{
+    constructor(id, form){
+        super(id, modalColorModes.primary);
+        this.form = form;
+        this.obj = {};
+    }
+
+    fill(){
+        this.obj = null;
+
+        let modal = this;
+        if (this.getDataPromise){
+            this.getDataPromise().
+            then(data => modal.obj = data).
+            then(x => super.fill());
+            return;
+        }
+
+        if(this.getData){
+            this.obj = this.getData();
+        }
+        super.fill();
+    }
+}
+
+/// ------------ example ---------------
+
+
+class AnyField1 extends FormField{
+    constructor(name, formId){
+        super(name, formId);
+    }
+
+    getData(){
+        return fetch("", {
+
+        }).then(response => {
+            let result = [];
+            for(let data of result.data){
+                result.push({ 
+                    text: data.text, 
+                    value: data.value
+                });
+            }
+            return Promise.resolve(result);
+        });
+    }
+}
+
+class AnyField2 extends FormField{
+    constructor(id, defaultValue){
+        
+    }
+}
+
+class AnyField3{
+    constructor(id, defaultValue){
+        super(id, defaultValue, {
+
+        });
+    }
+}
+
+class AnyField4{
+    constructor(id, defaultValue){
+        
+    }
+}
+
+class AnyForm extends Form{
+    constructor(id){
+        /*
+        let fields = {
+            anyField1: new AnyField1(),
+            anyField2: new AnyField2(),
+            anyField3: new AnyField3(),
+            anyField4: new AnyField4()
+        }
+        */
+        let fields = [
+            new AnyField1(),
+            new AnyField2(),
+            new AnyField3(),
+            new AnyField4()
+        ];
+        this.fields = {};
+
+        for(let field of fields){
+            this.fields[field.name] = field;
+        }
+
+        /*
+        f1 
+        f2 
+        f3 зависит от f1
+        f4 зависит от f2 и f3
+        */ 
+    }
+
+    
+
+    initialize(){
+        let getDataAnySelect1 = () => {
+            return fetch("", {
+
+            }).then(response => {
+                let result = [];
+                for(let data of result.data){
+                    result.push({ 
+                        text: data.text, 
+                        value: data.value
+                    });
+                }
+                return Promise.resolve(result);
+            });
+        }
+
+        this.fields.AnyField1.setInititialize(getDataAnySelect1);
+    }
+}
+
+
+class AnyFormModal extends FormModal{
+    constructor(id){
+        let form = new AnyForm(this.id + "-form");
+        super(id, form);
+        this.obj = {};
+    }
+
+    // Если асинхронно
+    getDataPromise(){
+
+    }
+
+    // если синхронно
+    getData(){
+
+    }
+
+    getTitle(){
+        let h4 = new HtmlElem().create("h4");
+        h4.addClasses(this.colorMode.titleClasses);
+        h4.getElement().textContent = this.obj.anyTitle;
+        return h4;
+    }
+
+    getContent(){
+        // Заполняем контент
+        // this.form.initialize(this.obj);
+        // return this.form.getElement();
+    }
+
+    getFooterButtons(){
+        // возвращаем массив кнопок
+    }
+}
+
+class HttpHelper{
+
+    objectToFormData(object){
+        let formData = new FormData();
+        for(let key of Object.keys(object)){
+            formData.append(key, object[key]);
+        }
+        return formData;
+    }
+
+    apiAshxPost(params, onSuccess, onError){
+        let formData = this.objectToFormData(params);
+        return fetch("/api.ashx", {
+            method: "POST",
+            body: formData
+        }).then((response) => {
+            if (response.ok) {
+                return response.json();
+            }
+            return Promise.reject(response);
+        }).
+        then(response => { onSuccess(response) }).
+        catch((response) => { 
+            if(onError) {
+                onError(response)
+            } 
+            else{
+                let errorMessage = "Произошла ошибка! " + 
+                "Пожалуйста перезагрузите страницу " + 
+                "или обратитесь к администратору.";
+                alert(errorMessage);
+                console.log(response); 
+            }
+        });
+    }
+}

@@ -175,7 +175,12 @@
 
 
 
-
+.spinner-size-container{
+    position:relative;
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+}
 
 .spinner-container{
     top:0;
@@ -187,7 +192,6 @@
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    background-color: #444
 }
 
 .spinner-container-stretch-w{
@@ -200,30 +204,37 @@
     height: var(--h);*/
     padding-top: 100%;
     /*aspect-ratio: 1 / 1;*/
-    background-color: #00856f;
     position: relative;
 }
 
 .spinner-circle{
     position: absolute;
-    background-color: #51a351;
-    border: 1px solid white;
-    width: 20%;
-    height: 20%;
+    background-color: rgb(190, 190, 190);
+    border: 1px solid rgb(175, 175, 175);
+
+    border-radius: 100%;
     top: 0;
     left: 0;
+    /*animation: 1500ms spinner-circle infinite linear;*/
+    /*animation: 1s linear -0.153846s infinite normal none running spinner-circle;*/
 }
 
 .spinner-container-small{
-    font-size: 18px;
+    position: relative;
+    height: 1em;
+    width: 1em;
 }
 
 .spinner-container-medium{
-    font-size: 32px;
+    position: relative;
+    height: 3em;
+    width: 3em;
 }
 
 .spinner-container-large{
-    font-size: 72px;
+    position: relative;
+    height: 7em;
+    width: 7em;
 }
 
 .spinner{
@@ -242,6 +253,77 @@
     rgb(0, 75, 119) 0 -0.5em 0 0, 
     rgb(0, 75, 119) 0.354em -0.354em 0 0;
 }
+
+/*let resStr = ""; for(let i = 0; i < 10; i++){ resStr += i + `0%{\n\trotate: ${36 * i}deg;\n}\n`; }; console.log(resStr);*/
+
+@keyframes spinner-circle{
+    00%{
+        rotate: 0deg;
+    }
+    5%{
+        rotate: 36deg;
+    }
+    10%{
+        rotate: 72deg;
+    }
+    15%{
+        rotate: 108deg;
+    }
+    20%{
+        rotate: 144deg;
+    }
+    25%{
+        rotate: 180deg;
+    }
+    30%{
+        rotate: 205deg;
+    }
+    35%{
+        rotate: 230deg;
+    }
+    40%{
+        rotate: 255deg;
+    }
+    45%{
+        rotate: 324deg;
+    }
+    50%{
+        rotate: 360deg;
+    }
+    55%{
+        rotate: 396deg;
+    }
+    60%{
+        rotate: 432deg;
+    }
+    65%{
+        rotate: 468deg;
+    }
+    70%{
+        rotate: 504deg;
+    }
+    75%{
+        rotate: 540deg;
+    }
+    80%{
+        rotate: 576deg;
+    }
+    85%{
+        rotate: 612deg;
+    }
+    90%{
+        rotate: 648deg;
+    }
+    95%{
+        rotate: 684deg;
+    }
+    100%{
+        rotate: 720deg;
+    }
+}
+
+
+
 
 @keyframes spinner {
     0% {
