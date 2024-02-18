@@ -16,5 +16,33 @@
 
   <button id="button-test">Test</button>
 
+
+
+  <button onclick="setEvent()">setEvent</button>
+  <button onclick="moveSqr()" id="move-btn">Move</button>
+
+  <select id="select1" onchange="console.log(this.value)">
+    <option value="1">one</option>
+    <option value="2">two</option>
+    <option value="3">three</option>
+    <option value="4">four</option>
+  </select>
+
+  <script>
+
+    function setEvent(){
+      document.getElementById("select1").value = 2;
+    }
+
+    /*
+    function moveSqr(){
+      let container1 = document.getElementById("container1");
+      let container2 = document.getElementById("container2");
+      let item1 = document.getElementById("item1");
+      container2.append(item1);
+    } 
+    */
+  </script>
+
 </body>
 </html>

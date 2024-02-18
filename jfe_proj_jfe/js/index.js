@@ -1,3 +1,7 @@
+function isNullOrUndefined(obj){
+    return obj === null || typeof(obj) === "undefined";
+}
+
 let HtmlElemId = function(htmlElemObj) {  
     this.htmlElemObj = htmlElemObj;
     this.set = (value) =>{
@@ -559,19 +563,74 @@ class SimpleVerseConfirmModal extends VerseModal{
 }
 
 class FieldDependEngine{
-    constructor(dependent, dependencies){
-        // зависимый
-        this.dependent = dependent;
-        // зависимости от
+    constructor(current, dependencies){
+        // Текущее поле
+        this.current = current;
+        // зависимости поля
         this.dependencies = dependencies;
-        for(let dependence of this.dependencies){
-            dependence.addOnchange(() => {
-                dependent.initialize();
-            });
+        // завясящие от текущего поля
+        this.dependent = [];
+
+        for(let dependence of this.dependencies){       
+            dependence.dependEnginge.dependent.push(current);
+        }
+    }
+
+    getDependenceByName(name){
+        for(let dependence of this.dependencies){       
+            if(dependence.name === name){
+                return dependence;
+            }
+        }
+        return null;
+    }
+
+    onInput(){
+        for(let dependentField of this.dependent){
+            dependentField.refresh();
         }
     }
 }
 
+class InputElement{
+    constructor(id){
+        this.id = id;
+    }
+
+    initialize(){
+
+    }
+
+    getElement(){
+        return new HtmlElem(this.id).create("input");
+    }
+
+    getValue(){
+        return new HtmlElem(this.id).value;
+    }
+
+    setValue(value){
+        new HtmlElem(this.id).value = value;
+    }
+}
+
+
+/*
+* -------- Поле --------
+* Инициализируется айдишником и полями от которых зависит
+*
+* Хранит своё значение (нужна привязка)
+*
+*
+* Метод
+*
+* Метод получить элемент (для вставки в форму)
+* Если есть в DOM - просто отдаём его
+* Если нет в DOM - формируем (+ запросы на сервак)
+* 
+*
+*/
+// организовать связанность this.value и значения в элементе DOM
 class FormField {
     constructor(name, formId, depends, required, enable){
         this.name = name;
@@ -584,16 +643,26 @@ class FormField {
     }
 
     getElement(){
+        let field = this;
 
+        let anyElement = document.createElement("any");
+        anyElement.addEventListener("input", (e) => {
+            field.value = anyElement.value;
+        });
+        return anyElement;
     }
+
+    // ---------------------
 
     getValue(){
-
+        return this.value;
     }
 
-    setValue(){
-
+    setValue(value){
+        this.value = value;
     }
+
+    // ----------------------
 
     initialize(value){
 
@@ -608,7 +677,7 @@ class FormField {
     }
 }
 
-class StaticNonRenderFormField extends FormField{
+class NonElementFormField extends FormField{
     constructor(name, formId){
         super(name, formId, [], true, false);
     }
@@ -620,6 +689,15 @@ class StaticNonRenderFormField extends FormField{
     initialize(value){
         this.value = value;
     }
+}
+
+class ElementFormField extends FormField {
+    constructor(name, formId, depends, required, enable){
+        super(name, formId, depends, required, enable);
+        this.element = new HtmlElem(this.id);
+    }
+
+
 }
 
 class FormFieldInput extends FormField{
@@ -649,35 +727,113 @@ class FormFieldInput extends FormField{
 class FormFieldSelect extends FormField{
     constructor(name, formId, depends, required, enable){
         super(name, formId, depends, required, enable);
-        
+        this.tempValue = null;
     }
 
-    initialize(value){
-        if(value){
-            this.value = value;
+    init(select){
+        if(select && select.id.get() !== this.id){
+            throw new Error("id переданного элемента и id поля не совпадают!");
         }
-        
-        return this.getData().then(data => {
-            let select = new HtmlElem(this.id);
-            if(!select.isExistsOnDocumnent()){
+
+        if(!select){
+            select = new HtmlElem(this.id);
+            if(!select.isExists()){
                 return;
             }
+        }
 
+        let defaultOptionValue = null
+        if(this.getDefaultOption){
+            let defOption = this.getDefaultOption();
+            select.append(defOption);
+            defaultOptionValue = defOption.value;
+        }
+
+        return this.getData().then(data => {  
+            let currentValue = isNullOrUndefined(this.value) && !isNullOrUndefined(this.tempValue)?
+                                this.tempValue: this.value;
+            
+
+            let hasCurrentValue = false;          
             for(let dataEntry of data){
                 let option = new HtmlElem().create("option");
                 option.getElement().value = dataEntry.value;
                 option.getElement().textContent = dataEntry.text;
                 select.append(option);
+                hasCurrentValue |= currentValue == dataEntry.value;
             }
-            select.getElement().value = this.value;
+
+            let selectElement = select.getElement();
+            if(isNullOrUndefined(currentValue)){
+                selectElement.value = defaultOptionValue;
+            }
+            else if(!hasCurrentValue){
+                this.setValue(null);
+            }
+            else{
+                this.setValue(currentValue);
+            }
 
             return Promise.resolve();
         });
     }
 
+    refresh(){
+        let select = new HtmlElem(this.id);
+        if(!select.isExists()){
+            return;
+        }
+        select.getElement().innerHTML = "";
+
+        return this.init();
+    }
+
     getElement(){
-        let select = new HtmlElem(this.id).create("select");
+        let select = new HtmlElem(this.id);
+        if(select.isExistsOnDocumnent()){
+            return select;
+        }
+        select.create("select");
+
+        let field = this;
+        select.getElement().addEventListener("input", (e) => {
+            field.setValue(select.getElement().value)
+        });
+
+        this.init(select);
         return select;
+    }
+
+
+    setValue(value){
+        let select = new HtmlElem(this.id);
+
+        //
+        if(!select.isExists){
+            this.tempValue = value;
+            this.value = null;
+            return;
+        }
+        let valueToSelect = isNullOrUndefined(value) && this.getDefaultOption? 
+                                this.getDefaultOption().value: value;
+
+        let selectHasValue = document.querySelector('#' + this.id + " option[value='" + valueToSelect + "']") !== null;
+
+        // value !== null && typeof(value) !== "undefined" && !selectHasValue
+        if(!selectHasValue){
+            throw new Error("Выпадающий список не содержит значения " + value);
+        }
+
+        this.tempValue = null;
+        this.value = value;
+        if(select.isExists() && select.getElement().value !== value){
+            select.getElement().value = valueToSelect;
+        }
+        this.dependEnginge.onInput();
+    }
+
+    getValue(){
+        return this.value;
     }
 }
 
@@ -691,12 +847,39 @@ class FormFieldCheckbox{
 
 
 
-
+/** 
+*
+* -------- форма --------
+* Инициализируется айдишником, уже содержит набор полей
+*
+* Метод получить элемент формы (для вставки)
+* Если есть в DOM - просто отдаём его
+* Если нет в DOM - формируем как контейнер, заполняя полями из списка
+*
+* Метод получить FormData
+* Пробегаемся по списку полей - отдаём данные в new FormData()
+* 
+*
+* -------- Поле --------
+* Инициализируется айдишником и полями от которых зависит
+*
+* Хранит своё значение (нужна привязка)
+*
+*
+* Метод
+*
+* Метод получить элемент (для вставки в форму)
+* Если есть в DOM - просто отдаём его
+* Если нет в DOM - формируем (+ запросы на сервак)
+* 
+*
+*/
 
 
 
 class Form{
-    constructor(fields){
+    constructor(id, fields){
+        this.id = id;
         this.fields = fields;
     }
 
@@ -711,6 +894,15 @@ class Form{
     getFormData(){
         let formData = new FormData();
         return formData;
+    }
+
+    getFieldByName(name){
+        for(let field of this.fields){
+            if(field.name === name){
+                return field;
+            }
+        }
+        return null;
     }
 }
 
@@ -743,17 +935,15 @@ class FormModal extends VerseModal{
 /// ------------ example ---------------
 
 
-class AnyField1 extends FormField{
-    constructor(name, formId){
-        super(name, formId);
+class AnyField1 extends FormFieldSelect{
+    constructor(name, modalId){
+        super(name, modalId, [], true, true);
     }
 
     getData(){
-        return fetch("", {
-
-        }).then(response => {
+        return new HttpHelper().getField1Data().then(response => {
             let result = [];
-            for(let data of result.data){
+            for(let data of response.data){
                 result.push({ 
                     text: data.text, 
                     value: data.value
@@ -762,61 +952,109 @@ class AnyField1 extends FormField{
             return Promise.resolve(result);
         });
     }
-}
 
-class AnyField2 extends FormField{
-    constructor(id, defaultValue){
-        
+    getDefaultOption(){
+        let option = new HtmlElem().create("option");
+        option.getElement().textContent = "-- Укажите значение --";
+        option.getElement().value = "";
+        return option.getElement();
     }
 }
 
-class AnyField3{
-    constructor(id, defaultValue){
-        super(id, defaultValue, {
+class AnyField2 extends FormFieldSelect{
+    constructor(name, modalId){
+        super(name, modalId, [], true, true);
+    }
 
+    getData(){
+        /*
+        
+        */
+        return new HttpHelper().getField2Data().then(response => {
+            let result = [];
+            for(let data of response.data){
+                result.push({ 
+                    text: data.text, 
+                    value: data.value
+                });
+            }
+            return Promise.resolve(result);
         });
     }
-}
 
-class AnyField4{
-    constructor(id, defaultValue){
-        
+    getDefaultOption(){
+        let option = new HtmlElem().create("option");
+        option.getElement().textContent = "-- Укажите значение --";
+        option.getElement().value = "";
+        return option.getElement();
     }
 }
 
-class AnyForm extends Form{
-    constructor(id){
-        /*
-        let fields = {
-            anyField1: new AnyField1(),
-            anyField2: new AnyField2(),
-            anyField3: new AnyField3(),
-            anyField4: new AnyField4()
-        }
-        */
-        let fields = [
-            new AnyField1(),
-            new AnyField2(),
-            new AnyField3(),
-            new AnyField4()
-        ];
-        this.fields = {};
-
-        for(let field of fields){
-            this.fields[field.name] = field;
-        }
-
-        /*
-        f1 
-        f2 
-        f3 зависит от f1
-        f4 зависит от f2 и f3
-        */ 
+class AnyField3 extends FormFieldSelect{
+    constructor(name, modalId, anyField1){
+        super(name, modalId, [anyField1], true, true);
     }
 
-    
+    getData(){
+        let anyField1 = this.dependEnginge.getDependenceByName("anyField1");
+        if(!anyField1.getValue()){
+            return Promise.resolve([]);
+        }
 
-    initialize(){
+        return new HttpHelper().getField3Data().then(response => {
+            let result = [];
+            for(let data of response.data){
+                result.push({ 
+                    text: data.text, 
+                    value: data.value
+                });
+            }
+            return Promise.resolve(result);
+        });
+    }
+
+    getDefaultOption(){
+        let option = new HtmlElem().create("option");
+        option.getElement().textContent = "-- Укажите значение --";
+        option.getElement().value = "";
+        return option.getElement();
+    }
+}
+
+class AnyField4 extends FormFieldSelect{
+    constructor(name, modalId, anyField2, anyField3){
+        super(name, modalId, [anyField2, anyField3], false, true);
+    }
+
+    getData(){
+        let field2 = this.dependEnginge.getDependenceByName("anyField2");
+        let field3 = this.dependEnginge.getDependenceByName("anyField3");
+        if(!field2.getValue() || !field3.getValue()){
+            return Promise.resolve([]);
+        }
+
+        return new HttpHelper().getField4Data().then(response => {
+            let result = [];
+            for(let data of response.data){
+                result.push({ 
+                    text: data.text, 
+                    value: data.value
+                });
+            }
+            return Promise.resolve(result);
+        });
+    }
+
+    getDefaultOption(){
+        let option = new HtmlElem().create("option");
+        option.getElement().textContent = "-- Укажите значение --";
+        option.getElement().value = "";
+        return option.getElement();
+    }
+}
+
+/*
+initialize(){
         let getDataAnySelect1 = () => {
             return fetch("", {
 
@@ -834,8 +1072,7 @@ class AnyForm extends Form{
 
         this.fields.AnyField1.setInititialize(getDataAnySelect1);
     }
-}
-
+*/
 
 class AnyFormModal extends FormModal{
     constructor(id){
@@ -872,7 +1109,132 @@ class AnyFormModal extends FormModal{
     }
 }
 
+class SomeFormModal extends FormModal{
+    constructor(id){
+        let anyField1 = new AnyField1("anyField1", id);
+        let anyField2 = new AnyField2("anyField2", id);
+        let anyField3 = new AnyField3("anyField3", id, anyField1);
+        let anyField4 = new AnyField4("anyField4", id, anyField2, anyField3);
+        let fields = [
+            anyField1, 
+            anyField2,
+            anyField3,
+            anyField4
+        ];
+        let form = new Form(id + "-form", fields);
+
+        super(id, form);
+    }
+
+    // Если асинхронно
+    /*
+    getDataPromise(){
+        
+    }
+    */
+
+    // если синхронно
+    getData(){
+        return {
+            title: "Test modal",
+            anyField2: 1,
+            anyField3: 10,
+            //anyField4: 1
+        };
+    }
+
+    getTitle(){
+        let h4 = new HtmlElem().create("h4");
+        h4.addClasses(this.colorMode.titleClasses);
+        h4.getElement().textContent = this.obj.title;
+        return h4;
+    }
+
+    getContent(){
+        // Заполняем контент
+        // this.form.initialize(this.obj);
+        // return this.form.getElement();
+        let fieldNames = Object.keys(this.obj);
+        for(let fieldName of fieldNames){
+            if(this.form.getFieldByName(fieldName) !== null){
+                this.form.getFieldByName(fieldName).setValue(this.obj[fieldName]);
+            }
+        }
+        return this.form.getElement();
+
+    }
+
+    getFooterButtons(){
+        let modal = this;
+        let closeBtn = new HtmlElem(this.id + "-close-btn").create("button");
+        closeBtn.addClasses(["jfe-verse-btn", "jfe-verse-btn-default"]);
+        closeBtn.getElement().textContent = "Закрыть";
+        closeBtn.getElement().addEventListener("click", (e) => { 
+            modal.clear(); 
+            modal.hide();
+        })
+        // возвращаем массив кнопок
+        return [closeBtn]
+    }
+}
+
 class HttpHelper{
+
+    delay(ms){
+        return new Promise((resolve, reject) => {
+            setTimeout(resolve, ms)
+        });
+    }
+
+    getField1Data(){
+        let data = [
+            { text: "field1 one", value: 1 },
+            { text: "field1 two", value: 2 },
+            { text: "field1 three", value: 3 },
+            { text: "field1 four", value: 4 },
+            { text: "field1 five", value: 5 }
+        ]
+
+        return this.delay(1000).then(() => {
+            return new Promise((resolve) => resolve({data}));
+        });
+    }
+
+    getField2Data(){
+        let data = [
+            { text: "field2 one", value: 1 },
+            { text: "field2 two", value: 2 },
+            { text: "field2 three", value: 3 }
+        ]
+
+        return this.delay(1000).then(() => {
+            return new Promise((resolve) => resolve({data}));
+        });
+    }
+
+    getField3Data(){
+        let data = [
+            { text: "field3 one", value: 1 },
+            { text: "field3 two", value: 2 },
+            { text: "field3 three", value: 3 },
+            { text: "field3 four", value: 4 },
+        ]
+
+        return this.delay(1000).then(() => {
+            return new Promise((resolve) => resolve({data}));
+        });
+    }
+
+    getField4Data(){
+        let data = [
+            { text: "field4 one", value: 1 },
+            { text: "field4 two", value: 2 }
+        ]
+
+        return this.delay(1000).then(() => {
+            return new Promise((resolve) => resolve({data}));
+        });
+    }
 
     objectToFormData(object){
         let formData = new FormData();

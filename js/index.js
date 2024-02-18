@@ -35,7 +35,8 @@ document.getElementsByTagName("body")[0].append(spinner.getElement());
 
 
     document.getElementById("button-test").addEventListener("click", function(e){
-        let modal = new SomeConfirmModal(1337);
+        //let modal = new SomeConfirmModal(1337);
+        let modal = new SomeFormModal("some-form-modal");
         modal.show();
         // 25,714285714285714285714285714286
 
