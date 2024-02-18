@@ -544,7 +544,7 @@ class SimpleVerseConfirmModal extends VerseModal{
         confirmBtn.getElement().textContent = this.confirmBtnText;
         confirmBtn.getElement().addEventListener("click", (e) => {
             modal.onConfirm();
-        })
+        });
 
         let closeBtn = new HtmlElem(this.id + "-close-btn").create("button");
         closeBtn.addClasses(["jfe-verse-btn", "jfe-verse-btn-default"]);
@@ -552,7 +552,7 @@ class SimpleVerseConfirmModal extends VerseModal{
         closeBtn.getElement().addEventListener("click", (e) => { 
             modal.clear(); 
             modal.hide();
-        })
+        });
 
         return [closeBtn, confirmBtn];
     }
@@ -587,33 +587,12 @@ class FieldDependEngine{
 
     onInput(){
         for(let dependentField of this.dependent){
-            dependentField.refresh();
+            if(dependentField.onChangeDependence){
+                dependentField.onChangeDependence();
+            }
         }
     }
 }
-
-class InputElement{
-    constructor(id){
-        this.id = id;
-    }
-
-    initialize(){
-
-    }
-
-    getElement(){
-        return new HtmlElem(this.id).create("input");
-    }
-
-    getValue(){
-        return new HtmlElem(this.id).value;
-    }
-
-    setValue(value){
-        new HtmlElem(this.id).value = value;
-    }
-}
-
 
 /*
 * -------- Поле --------
@@ -630,29 +609,16 @@ class InputElement{
 * 
 *
 */
-// организовать связанность this.value и значения в элементе DOM
+
 class FormField {
-    constructor(name, formId, depends, required, enable){
+    constructor(name, parentId, title, depends, required){
         this.name = name;
-        this.id = formId + "-" + name;
+        this.id = parentId + "-" + name;
+        this.title = title;
         this.dependEnginge = new FieldDependEngine(this, depends);
         this.required = required;
-        this.enable = enable;
-
-        this.onChangeList = [];
+        this.value = null;
     }
-
-    getElement(){
-        let field = this;
-
-        let anyElement = document.createElement("any");
-        anyElement.addEventListener("input", (e) => {
-            field.value = anyElement.value;
-        });
-        return anyElement;
-    }
-
-    // ---------------------
 
     getValue(){
         return this.value;
@@ -661,73 +627,112 @@ class FormField {
     setValue(value){
         this.value = value;
     }
-
-    // ----------------------
-
-    initialize(value){
-
-    }
-
-    addOnchange(action){
-        this.onChangeList.push(action);
-    }
-
-    setInititialize(getData){
-        this.getData = getData;
-    }
 }
 
-class NonElementFormField extends FormField{
-    constructor(name, formId){
-        super(name, formId, [], true, false);
-    }
-
-    getValue(){
-        return this.value;
-    }
-
-    initialize(value){
-        this.value = value;
+class StaticNonElementFormField extends FormField{
+    constructor(name, parentId, title){
+        super(name, parentId, title, [], true);
     }
 }
 
 class ElementFormField extends FormField {
-    constructor(name, formId, depends, required, enable){
-        super(name, formId, depends, required, enable);
-        this.element = new HtmlElem(this.id);
+    constructor(name, parentId, title, depends, required){
+        super(name, parentId, title, depends, required);
+        this.tempValue = null;
+        this.currentElement = null;
     }
 
+    getFormElement(){
+        let container = new HtmlElem(this.id + "-container").create("div");
+        container.addClass("jfe-verse-modal-form-field-container");
 
+        let labelText = this.title + (this.required? " (обязательное)": "") + ":";
+        let label = new HtmlElem(this.id + "-label").create("label");
+        label.addAttribute("for", this.id);
+        label.getElement().textContent = labelText;
+
+        let element = this.getElement();
+        container.append(label);
+        container.append(element);
+        return container;
+    }
+
+    onChangeDependence(){
+
+    }
 }
 
-class FormFieldInput extends FormField{
-    constructor(id, defaultValue){
-        super(id, defaultValue);
+class FormFieldInput extends ElementFormField{
+    constructor(name, parentId, title, depends, required, placeholder){
+        super(name, parentId, title, depends, required);
+        this.placeholder = placeholder;
+    }
+
+    init(input){
+        if(input && input.id.get() !== this.id){
+            throw new Error("id переданного элемента и id поля не совпадают!");
+        }
+
+        if(!input){
+            input = new HtmlElem(this.id);
+            if(!input.isExists()){
+                return;
+            }
+        }
+
+        let currentValue = isNullOrUndefined(this.value) && !isNullOrUndefined(this.tempValue)?
+                                this.tempValue: this.value;
+
+        this.setValue(currentValue);
     }
 
     getElement(){
-        let input = new HtmlElem(this.id).create("input");
-        input.getElement().value = this.defaultValue;
-
-        input.addClasses([]);
+        let input = new HtmlElem(this.id);
+        if(input.isExistsOnDocumnent()){
+            return input;
+        }
+        if(this.currentElement){
+            return this.currentElement;
+        }
+        
+        input.create("input");
+        input.addAttribute("placeholder", this.placeholder);
+        let field = this;
+        input.getElement().addEventListener("input", (e) => {
+            field.setValue(input.getElement().value)
+        });
+        this.currentElement = input;
+        this.init(input);
         return input;
     }
 
-    addOnchange(action){
-        new HtmlElem(this.id).getElement().addEventListener("input", e => {
-            action(e);
-        })
+    setValue(value){
+        let input = new HtmlElem(this.id);
+        input = !input.isExists() && this.currentElement? this.currentElement: input;
+
+        if(!input.isExists()){
+            this.tempValue = value;
+            this.value = null;
+            return;
+        }
+        let valueToInput = isNullOrUndefined(value)? this.getDefaultValue(): value;
+
+        this.tempValue = null;
+        this.value = value;
+        if(input.isExists() && input.getElement().value !== value){
+            input.getElement().value = valueToInput;
+        }
+        this.dependEnginge.onInput();
     }
 
-    getValue(){
-
+    getDefaultValue(){
+        return "";
     }
 }
 
-class FormFieldSelect extends FormField{
-    constructor(name, formId, depends, required, enable){
-        super(name, formId, depends, required, enable);
-        this.tempValue = null;
+class FormFieldSelect extends ElementFormField{
+    constructor(name, parentId, title, depends, required){
+        super(name, parentId, title, depends, required);
     }
 
     init(select){
@@ -788,11 +793,19 @@ class FormFieldSelect extends FormField{
         return this.init();
     }
 
+    onChangeDependence(){
+        this.refresh();
+    }
+
     getElement(){
         let select = new HtmlElem(this.id);
         if(select.isExistsOnDocumnent()){
             return select;
         }
+        if(this.currentElement){
+            return this.currentElement;
+        }
+
         select.create("select");
 
         let field = this;
@@ -801,15 +814,15 @@ class FormFieldSelect extends FormField{
         });
 
         this.init(select);
+        this.currentElement = select;
         return select;
     }
 
-
     setValue(value){
         let select = new HtmlElem(this.id);
+        select = !select.isExists() && this.currentElement? this.currentElement: select;
 
-        //
-        if(!select.isExists){
+        if(!select.isExists()){
             this.tempValue = value;
             this.value = null;
             return;
@@ -819,7 +832,6 @@ class FormFieldSelect extends FormField{
 
         let selectHasValue = document.querySelector('#' + this.id + " option[value='" + valueToSelect + "']") !== null;
 
-        // value !== null && typeof(value) !== "undefined" && !selectHasValue
         if(!selectHasValue){
             throw new Error("Выпадающий список не содержит значения " + value);
         }
@@ -831,10 +843,6 @@ class FormFieldSelect extends FormField{
         }
         this.dependEnginge.onInput();
     }
-
-    getValue(){
-        return this.value;
-    }
 }
 
 class FormFieldSelect2{
@@ -845,38 +853,6 @@ class FormFieldCheckbox{
 
 }
 
-
-
-/** 
-*
-* -------- форма --------
-* Инициализируется айдишником, уже содержит набор полей
-*
-* Метод получить элемент формы (для вставки)
-* Если есть в DOM - просто отдаём его
-* Если нет в DOM - формируем как контейнер, заполняя полями из списка
-*
-* Метод получить FormData
-* Пробегаемся по списку полей - отдаём данные в new FormData()
-* 
-*
-* -------- Поле --------
-* Инициализируется айдишником и полями от которых зависит
-*
-* Хранит своё значение (нужна привязка)
-*
-*
-* Метод
-*
-* Метод получить элемент (для вставки в форму)
-* Если есть в DOM - просто отдаём его
-* Если нет в DOM - формируем (+ запросы на сервак)
-* 
-*
-*/
-
-
-
 class Form{
     constructor(id, fields){
         this.id = id;
@@ -885,14 +861,18 @@ class Form{
 
     getElement(){
         let formContainer = new HtmlElem(this.id).create("div");
+        formContainer.addClass("jfe-verse-modal-form");
         for(let field of this.fields){
-            formContainer.append(field.getElement());
+            formContainer.append(field.getFormElement());
         }
         return formContainer;
     }
 
     getFormData(){
         let formData = new FormData();
+        for(let field of this.fields){
+            formData.append(field.name, field.getValue());
+        }
         return formData;
     }
 
@@ -906,7 +886,6 @@ class Form{
     }
 }
 
-// extends VerseModal
 class FormModal extends VerseModal{
     constructor(id, form){
         super(id, modalColorModes.primary);
@@ -936,8 +915,8 @@ class FormModal extends VerseModal{
 
 
 class AnyField1 extends FormFieldSelect{
-    constructor(name, modalId){
-        super(name, modalId, [], true, true);
+    constructor(name, parentId, title){
+        super(name, parentId, title, [], true);
     }
 
     getData(){
@@ -962,8 +941,8 @@ class AnyField1 extends FormFieldSelect{
 }
 
 class AnyField2 extends FormFieldSelect{
-    constructor(name, modalId){
-        super(name, modalId, [], true, true);
+    constructor(name, parentId, title){
+        super(name, parentId, title, [], true);
     }
 
     getData(){
@@ -991,8 +970,8 @@ class AnyField2 extends FormFieldSelect{
 }
 
 class AnyField3 extends FormFieldSelect{
-    constructor(name, modalId, anyField1){
-        super(name, modalId, [anyField1], true, true);
+    constructor(name, parentId, title, anyField1){
+        super(name, parentId, title, [anyField1], true);
     }
 
     getData(){
@@ -1022,8 +1001,8 @@ class AnyField3 extends FormFieldSelect{
 }
 
 class AnyField4 extends FormFieldSelect{
-    constructor(name, modalId, anyField2, anyField3){
-        super(name, modalId, [anyField2, anyField3], false, true);
+    constructor(name, parentId, title, anyField2, anyField3){
+        super(name, parentId, title, [anyField2, anyField3], false);
     }
 
     getData(){
@@ -1053,6 +1032,12 @@ class AnyField4 extends FormFieldSelect{
     }
 }
 
+class AnyField5 extends FormFieldInput{
+    constructor(name, parentId, title, placeholder){
+        super(name, parentId, title, [], false, placeholder);
+    }
+}
+
 /*
 initialize(){
         let getDataAnySelect1 = () => {
@@ -1074,52 +1059,19 @@ initialize(){
     }
 */
 
-class AnyFormModal extends FormModal{
-    constructor(id){
-        let form = new AnyForm(this.id + "-form");
-        super(id, form);
-        this.obj = {};
-    }
-
-    // Если асинхронно
-    getDataPromise(){
-
-    }
-
-    // если синхронно
-    getData(){
-
-    }
-
-    getTitle(){
-        let h4 = new HtmlElem().create("h4");
-        h4.addClasses(this.colorMode.titleClasses);
-        h4.getElement().textContent = this.obj.anyTitle;
-        return h4;
-    }
-
-    getContent(){
-        // Заполняем контент
-        // this.form.initialize(this.obj);
-        // return this.form.getElement();
-    }
-
-    getFooterButtons(){
-        // возвращаем массив кнопок
-    }
-}
-
 class SomeFormModal extends FormModal{
     constructor(id){
-        let anyField1 = new AnyField1("anyField1", id);
-        let anyField2 = new AnyField2("anyField2", id);
-        let anyField3 = new AnyField3("anyField3", id, anyField1);
-        let anyField4 = new AnyField4("anyField4", id, anyField2, anyField3);
+        let anyField1 = new AnyField1("anyField1", id, "Какое то поле 1");
+        let anyField2 = new AnyField2("anyField2", id, "Какое то поле 2");
+        let anyField3 = new AnyField3("anyField3", id, "Какое то поле 3", anyField1);
+        let anyField4 = new AnyField4("anyField4", id, "Какое то поле 4", anyField2, anyField3);
+        let anyField5 = new AnyField5("anyField5", id, "Какое то текстовое поле", "Заполни меня");
         let fields = [
             anyField1, 
             anyField2,
             anyField3,
-            anyField4
+            anyField4,
+            anyField5
         ];
         let form = new Form(id + "-form", fields);
 
@@ -1139,6 +1091,7 @@ class SomeFormModal extends FormModal{
             title: "Test modal",
             anyField2: 1,
             anyField3: 10,
+            anyField5: "help me"
             //anyField4: 1
         };
     }
@@ -1166,15 +1119,32 @@ class SomeFormModal extends FormModal{
 
     getFooterButtons(){
         let modal = this;
+
+        let confirmBtn = new HtmlElem(this.id + "-confirm-btn").create("button");
+        confirmBtn.addClasses(this.colorMode.primaryBtnClasses);
+        confirmBtn.getElement().textContent = "Получить форму";
+        confirmBtn.getElement().addEventListener("click", (e) => {
+            modal.onConfirm();
+        });
+
         let closeBtn = new HtmlElem(this.id + "-close-btn").create("button");
         closeBtn.addClasses(["jfe-verse-btn", "jfe-verse-btn-default"]);
         closeBtn.getElement().textContent = "Закрыть";
         closeBtn.getElement().addEventListener("click", (e) => { 
             modal.clear(); 
             modal.hide();
-        })
+        });
         // возвращаем массив кнопок
-        return [closeBtn]
+        return [closeBtn, confirmBtn]
+    }
+
+    onConfirm(){
+        let formData = this.form.getFormData();
+        for(let key of formData.keys()){
+            let value = formData.getAll(key)[0];
+            console.log({ key: key, value: value } );
+        }
+        
     }
 }
 

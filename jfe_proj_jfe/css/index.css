@@ -96,6 +96,19 @@
     /*line-height: 1.42857143;*/
 }
 
+.jfe-verse-modal-form{
+    display: flex;
+    flex-direction: column;
+    padding: 15px 10px;
+    gap: 10px;
+}
+
+.jfe-verse-modal-form-field-container{
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9em;
+}
+
 /* == Это можно не вводить в КИС == */
 .jfe-verse-btn{
     outline: none !important;
