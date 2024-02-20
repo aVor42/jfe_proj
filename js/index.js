@@ -19,7 +19,8 @@ class SomeConfirmModal extends SimpleVerseConfirmModal{
 }
 
 document.addEventListener("DOMContentLoaded", function(event) { 
-    let spinner = new SpinnerMedium("test-spinner", 8);
+    let spinner = new SpinnerMedium("test-spinner", 8); //new Spinner3("test-spin", 8); // 
+    
 /*
     let tempContainer = document.createElement("div");
     tempContainer.style.marginTop = "200px";

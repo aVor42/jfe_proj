@@ -2,13 +2,15 @@ function isNullOrUndefined(obj){
     return obj === null || typeof(obj) === "undefined";
 }
 
-let HtmlElemId = function(htmlElemObj) {  
-    this.htmlElemObj = htmlElemObj;
-    this.set = (value) =>{
+class HtmlElemId{
+    constructor(htmlElemObj){
+        this.htmlElemObj = htmlElemObj;
+    }
+
+    set(value){
         if(!value){
             return;
         }
-
         if(this.htmlElemObj.element){
             this.htmlElemObj.element.id = value;
             this.value = null;
@@ -16,39 +18,19 @@ let HtmlElemId = function(htmlElemObj) {
         else{
             this.value = value;
         }
-    };
-    this.get = () =>{
-        return this.htmlElemObj.element && this.htmlElemObj.element.id && !this.value? this.htmlElemObj.element.id: this.value;
-    };
-    this.empty = () => {
+    }
+
+    get(){
+        let element = this.htmlElemObj.element;
+        return element && element.id && !this.value? 
+                element.id: this.value;
+    }
+
+    empty() {
         this.value = null;
         this.htmlElemObj.element.removeAttribute("id");
-    };
-    /*
-    return {
-        set: (value) =>{
-            if(!value){
-                return;
-            }
-
-            if(this.htmlElemObj.element){
-                this.htmlElemObj.element.id = value;
-                this.value = null;
-            }
-            else{
-                this.value = value;
-            }
-        },
-        get: () =>{
-            return this.htmlElemObj.element? this.htmlElemObj.element.id: this.value;
-        },
-        empty: () => {
-            this.value = null;
-            this.htmlElemObj.element.removeAttribute("id");
-        }
-    };
-    */
-};
+    }
+}
 
 class HtmlElem{ 
     constructor(id){
@@ -150,78 +132,12 @@ class HtmlElem{
     }
 }
 
-class Spinner2{
-    constructor(spinnerId, circleCount){
-        this.spinnerId = spinnerId;
-        this.defaultCirclesCount = 5;
-        this.circleCount = circleCount? circleCount: this.defaultCirclesCount;
-    }
-
-    create(){
-        let loader = new HtmlElem().create("div");
-        loader.addClass("loader");
-
-        for(let i = 0; i < this.circleCount; i++){
-            let circle = new HtmlElem().create("div");
-            circle.addClass("circle");
-            loader.append(circle);
-        }
-
-        let spin = new HtmlElem().create("div");
-        spin.addClass("spinner");
-        spin.append(loader);
-
-        let pageloader3 = new HtmlElem().create("div");
-        pageloader3.addClass("pageloader3");
-        pageloader3.append(spin);
-
-        let column = new HtmlElem().create("div");
-        column.addClass("col-lg-12");
-        column.append(pageloader3);
-
-        let preloader = new HtmlElem().create("div");
-        preloader.addClasses(["row", "preloader"]);
-        preloader.append(column);
-
-        let spinner = new HtmlElem(this.spinnerId).create("div");
-        spinner.append(preloader);
-
-        return spinner.element;
-    }
-
-    clear(){
-
-    }
-}
-
 class Spinner{
-    constructor(id, spinnerSizeClass){
-        this.id = id;
-        this.spinnerSizeClass = spinnerSizeClass;
-    }
-
-    getElement(){
-        let container = new HtmlElem(this.id).create("div");
-        container.addClass("spinner-container");
-        if (this.spinnerSizeClass){
-            container.addClass(this.spinnerSizeClass);
-        }
-
-        let testDiv = new HtmlElem().create("div");
-        testDiv.addClass("spinner");
-        container.append(testDiv);
-
-        return container.getElement();
-    }
-}
-
-
-
-
-class Spinner3{
     constructor(id, circlesCount){
         this.id = id;
         this.circlesCount = circlesCount;
+        this.radius = 10;
+        this.animateTimeMs = 3500;
     }
 
     getElement(){
@@ -235,59 +151,73 @@ class Spinner3{
         let spinnerRatioW = new HtmlElem().create("div");
         spinnerRatioW.addClass("spinner-container-ratio-w");
         spinnerW.append(spinnerRatioW);
-        
-        let radius = 10;
-        let animateTimeMs = 3500;
 
-        
-        let getTranslateByXY = (x, y) => {
-            return `translate(${getTransformPercent(x)}%, ${getTransformPercent(-y)}%)`
-        }
-
-        let getTransformPercent = (position) => {
-            let centerSideProcent = 0;
-            let endSideProcent = 50 - radius;
-            let lengthProcent = endSideProcent - centerSideProcent;
-            let procentByDiameter = lengthProcent * 100 / (radius * 2);
-            return (procentByDiameter * position).toFixed(2);
-
-        }
-
-        let genAngle = 2 * Math.PI;
-        let dAngle = genAngle / this.circlesCount;
-        let length = 1;
-
-        let dTime = animateTimeMs / this.circlesCount / 2;
-
+        let dTime = this.animateTimeMs / this.circlesCount / 2;
         for(let i = 0; i < this.circlesCount; i++){
-            let circle = new HtmlElem().create("div");
-            circle.addClass("spinner-circle");
-            let circElement = circle.getElement();
-            let getBeginCeneter = () =>{
-                let centerPerscent = 50;
-                return (centerPerscent - radius) + "%";
-            }
-            circElement.style.height = radius * 2 + "%";
-            circElement.style.width = radius * 2 + "%";
-            circElement.style.top = getBeginCeneter();
-            circElement.style.left = getBeginCeneter();
-
-            let angle = dAngle  * i;
-            let startAnimateTime = dTime * i;
-            /* animation: 1s linear -0.153846s infinite normal none running spinner-line-fade-quick; */
-            let x = Math.cos(angle) * length;
-            let y = Math.sin(angle) * length
-            circElement.style.transform = getTranslateByXY(1, 0);
-            circElement.style.animation = `${animateTimeMs}ms linear ${-startAnimateTime}ms infinite normal none running spinner-circle`;
-            spinnerRatioW.append(circle);
+            let startAnimateTime = -dTime * i;
+            let circle = new SpinnerCircle(this.radius, this.animateTimeMs, startAnimateTime);
+            spinnerRatioW.append(circle.getCircle());            
         }
-
 
         return container.getElement();
     }
 }
 
-class SpinnerSize extends Spinner3{
+class SpinnerCircle{
+    constructor(radius, animateTimeMs, startAnimateTime){
+        this.radius = radius;
+        this.animateTimeMs = animateTimeMs;
+        this.startAnimateTime = startAnimateTime;
+        this.classes = ["spinner-circle"];
+    }
+
+    getBeginCeneter(){
+        let centerPerscent = 50;
+        return (centerPerscent - this.radius) + "%";
+    }
+
+    getTransformPercent(position) {
+        let centerSideProcent = 0;
+        let endSideProcent = 50 - this.radius;
+        let lengthProcent = endSideProcent - centerSideProcent;
+        let procentByDiameter = lengthProcent * 100 / (this.radius * 2);
+        return (procentByDiameter * position).toFixed(2);
+
+    }
+
+    getTranslateByXY(x, y) {
+        return `translate(${this.getTransformPercent(x)}%, ${this.getTransformPercent(-y)}%)`
+    }
+
+    getStyles(){
+        let sideSize = this.radius * 2 + "%";
+        let beginCenter = this.getBeginCeneter();
+        let animation = this.animateTimeMs + "ms linear " + 
+                        this.startAnimateTime + 
+                        "ms infinite normal none running spinner-circle"
+        return { 
+            height: sideSize,
+            width: sideSize,
+            top: beginCenter,
+            left: beginCenter,
+            transform: this.getTranslateByXY(1, 0),
+            animation: animation
+        };
+    }
+
+    getCircle(){
+        let circle = new HtmlElem().create("div");
+        circle.addClasses(this.classes);
+        let circElement = circle.getElement();
+        let styles = this.getStyles();
+        for(let styleKey of Object.keys(styles)){
+            circElement.style[styleKey] = styles[styleKey];
+        }
+        return circElement;
+    }
+}
+
+class SpinnerSize extends Spinner{
     constructor(id, circlesCount, sizeClass){
         super(id, circlesCount);
         this.sizeClass = sizeClass;
@@ -341,8 +271,6 @@ class Modal{
     }
 
     fill(){
-        let modal = this.getModal();
-        // В потомках надо заполнить эту модалку
     }
 
     show(){
@@ -398,10 +326,6 @@ class Modal{
         this.clear();
         this.fill();
     }
-}
-
-const modalBtnTypes = {
-    action: { id: 1 }
 }
 
 const modalColorModes = {
@@ -576,6 +500,10 @@ class FieldDependEngine{
         }
     }
 
+    setForm(form){
+        this.form = form;
+    }
+
     getDependenceByName(name){
         for(let dependence of this.dependencies){       
             if(dependence.name === name){
@@ -591,24 +519,12 @@ class FieldDependEngine{
                 dependentField.onChangeDependence();
             }
         }
+        if(this.form){
+            this.form.onFieldInput();
+        }
+        
     }
 }
-
-/*
-* -------- Поле --------
-* Инициализируется айдишником и полями от которых зависит
-*
-* Хранит своё значение (нужна привязка)
-*
-*
-* Метод
-*
-* Метод получить элемент (для вставки в форму)
-* Если есть в DOM - просто отдаём его
-* Если нет в DOM - формируем (+ запросы на сервак)
-* 
-*
-*/
 
 class FormField {
     constructor(name, parentId, title, depends, required){
@@ -618,6 +534,10 @@ class FormField {
         this.dependEnginge = new FieldDependEngine(this, depends);
         this.required = required;
         this.value = null;
+    }
+
+    setForm(form){
+        this.dependEnginge.setForm(form);
     }
 
     getValue(){
@@ -789,6 +709,11 @@ class FormFieldSelect extends ElementFormField{
             return;
         }
         select.getElement().innerHTML = "";
+        let currentValue = isNullOrUndefined(this.value) && !isNullOrUndefined(this.tempValue)?
+                                this.tempValue: this.value;
+        this.value = null;
+        this.tempValue = currentValue;
+        this.dependEnginge.onInput();
 
         return this.init();
     }
@@ -845,18 +770,14 @@ class FormFieldSelect extends ElementFormField{
     }
 }
 
-class FormFieldSelect2{
-
-}
-
-class FormFieldCheckbox{
-
-}
-
 class Form{
     constructor(id, fields){
         this.id = id;
         this.fields = fields;
+        for(let field of this.fields){
+            field.setForm(this);
+        }
+        this.submitButton = null;
     }
 
     getElement(){
@@ -883,6 +804,25 @@ class Form{
             }
         }
         return null;
+    }
+
+    onFieldInput(){
+        let allRequiredFilled = true;
+        for(let field of this.fields){
+
+            allRequiredFilled &= !!field.getValue() || !field.required;
+        }
+        if(this.submitButton){
+            this.submitButton.disabled = !allRequiredFilled;
+        }
+    }
+
+    getSubmitButton(){
+        if(!this.submitButton){
+            let button = new HtmlElem(this.id + "-btn-submit").create("button");
+            this.submitButton = button.getElement();
+        }        
+        return this.submitButton;
     }
 }
 
@@ -1012,7 +952,7 @@ class AnyField4 extends FormFieldSelect{
             return Promise.resolve([]);
         }
 
-        return new HttpHelper().getField4Data().then(response => {
+        return new HttpHelper().getField4Data(field2, field3).then(response => {
             let result = [];
             for(let data of response.data){
                 result.push({ 
@@ -1037,27 +977,6 @@ class AnyField5 extends FormFieldInput{
         super(name, parentId, title, [], false, placeholder);
     }
 }
-
-/*
-initialize(){
-        let getDataAnySelect1 = () => {
-            return fetch("", {
-
-            }).then(response => {
-                let result = [];
-                for(let data of result.data){
-                    result.push({ 
-                        text: data.text, 
-                        value: data.value
-                    });
-                }
-                return Promise.resolve(result);
-            });
-        }
-
-        this.fields.AnyField1.setInititialize(getDataAnySelect1);
-    }
-*/
 
 class SomeFormModal extends FormModal{
     constructor(id){
@@ -1120,7 +1039,7 @@ class SomeFormModal extends FormModal{
     getFooterButtons(){
         let modal = this;
 
-        let confirmBtn = new HtmlElem(this.id + "-confirm-btn").create("button");
+        let confirmBtn = new HtmlElem().setElement(this.form.getSubmitButton());
         confirmBtn.addClasses(this.colorMode.primaryBtnClasses);
         confirmBtn.getElement().textContent = "Получить форму";
         confirmBtn.getElement().addEventListener("click", (e) => {
@@ -1143,8 +1062,7 @@ class SomeFormModal extends FormModal{
         for(let key of formData.keys()){
             let value = formData.getAll(key)[0];
             console.log({ key: key, value: value } );
-        }
-        
+        }        
     }
 }
 
@@ -1195,11 +1113,18 @@ class HttpHelper{
         });
     }
 
-    getField4Data(){
+    getField4Data(field2, field3){
         let data = [
             { text: "field4 one", value: 1 },
             { text: "field4 two", value: 2 }
-        ]
+        ];
+
+        if(field3.getValue() == 3){
+            data = [
+                { text: "field4 three", value: 3 },
+                { text: "field4 four", value: 4 }
+            ];
+        }
 
         return this.delay(1000).then(() => {
             return new Promise((resolve) => resolve({data}));
